@@ -13,11 +13,11 @@
 #include "validators/ScreenNameValidator.h"
 #include "validators/ValidationError.h"
 
-#include <QMessageBox>
-#include <QGuiApplication>
 #include <QGroupBox>
-#include <QHeaderView>
+#include <QGuiApplication>
 #include <QHBoxLayout>
+#include <QHeaderView>
+#include <QMessageBox>
 #include <QScreen>
 #include <QTableWidget>
 #include <QToolButton>

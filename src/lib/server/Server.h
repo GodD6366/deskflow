@@ -249,9 +249,7 @@ private:
   bool isExternalDisplayEdge(
       const BaseClientProxy *, const ServerConfig::ScreenRect &, Direction, int32_t x, int32_t y
   ) const;
-  bool mapToDisplay(
-      const BaseClientProxy *src, const BaseClientProxy *dst, Direction, int32_t &x, int32_t &y
-  ) const;
+  bool mapToDisplay(const BaseClientProxy *src, const BaseClientProxy *dst, Direction, int32_t &x, int32_t &y) const;
 
   // lookup neighboring screen.  given a position relative to the
   // source screen, find the screen we should move onto and where.

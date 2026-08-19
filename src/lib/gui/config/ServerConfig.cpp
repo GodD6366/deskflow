@@ -138,8 +138,7 @@ void ServerConfig::recall()
     const int centerRow = m_rows / 2;
     for (int i = 0; i < screens().size(); ++i) {
       if (!screens()[i].isNull()) {
-        screens()[i].setLayoutPosition(
-            QPoint((i % m_columns - centerColumn) * 1920, (i / m_columns - centerRow) * 1080)
+        screens()[i].setLayoutPosition(QPoint((i % m_columns - centerColumn) * 1920, (i / m_columns - centerRow) * 1080)
         );
       }
     }
@@ -191,8 +190,7 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
     constexpr double epsilon = 0.00001;
     if (start <= epsilon && end >= 1.0 - epsilon)
       return QString();
-    return QStringLiteral("(%1,%2)")
-        .arg(QString::number(start * 100.0, 'g', 8), QString::number(end * 100.0, 'g', 8));
+    return QStringLiteral("(%1,%2)").arg(QString::number(start * 100.0, 'g', 8), QString::number(end * 100.0, 'g', 8));
   };
 
   for (const auto &screen : config.screens()) {
@@ -278,8 +276,8 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
 
       std::ranges::sort(links, {}, [](const Link &link) { return std::tuple(link.side, link.sourceStart); });
       for (const auto &link : std::as_const(links)) {
-        outStream << "\t\t" << link.side << intervalText(link.sourceStart, link.sourceEnd) << " = "
-                  << link.destination << intervalText(link.destinationStart, link.destinationEnd) << Qt::endl;
+        outStream << "\t\t" << link.side << intervalText(link.sourceStart, link.sourceEnd) << " = " << link.destination
+                  << intervalText(link.destinationStart, link.destinationEnd) << Qt::endl;
       }
     }
   }

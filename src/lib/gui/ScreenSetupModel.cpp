@@ -154,9 +154,8 @@ bool ScreenSetupModel::dropMimeData(
 void ScreenSetupModel::addScreen(const Screen &newScreen)
 {
   const auto server = std::ranges::find_if(m_Screens, [](const Screen &screen) { return screen.isServer(); });
-  const QPoint position = server == m_Screens.end()
-                              ? QPoint()
-                              : server->layoutPosition() + QPoint(server->displayBounds().width(), 0);
+  const QPoint position =
+      server == m_Screens.end() ? QPoint() : server->layoutPosition() + QPoint(server->displayBounds().width(), 0);
   addScreenAt(newScreen, position);
 }
 

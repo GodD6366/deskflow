@@ -14,16 +14,16 @@
 #include <QDataStream>
 #include <QDragEnterEvent>
 #include <QDropEvent>
-#include <QGuiApplication>
+#include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsSceneContextMenuEvent>
-#include <QGraphicsItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QGuiApplication>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMimeData>
-#include <QPainter>
 #include <QPaintEvent>
+#include <QPainter>
 #include <QResizeEvent>
 #include <QScreen>
 #include <QTimer>
@@ -246,9 +246,7 @@ qreal snapCoordinate(qreal value, const QList<qreal> &candidates)
 
 } // namespace
 
-ScreenSetupView::ScreenSetupView(QWidget *parent)
-    : QGraphicsView(parent),
-      m_scene(new QGraphicsScene(this))
+ScreenSetupView::ScreenSetupView(QWidget *parent) : QGraphicsView(parent), m_scene(new QGraphicsScene(this))
 {
   setScene(m_scene);
   setAcceptDrops(true);
@@ -342,9 +340,7 @@ void ScreenSetupView::setScreenPosition(int screenIndex, const QPointF &position
 {
   if (m_rebuilding || !m_model || screenIndex < 0 || screenIndex >= m_model->m_Screens.size())
     return;
-  m_model->m_Screens[screenIndex].setLayoutPosition(
-      QPoint(std::lround(position.x()), std::lround(position.y()))
-  );
+  m_model->m_Screens[screenIndex].setLayoutPosition(QPoint(std::lround(position.x()), std::lround(position.y())));
 }
 
 void ScreenSetupView::finishScreenMove()

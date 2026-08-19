@@ -136,7 +136,6 @@ Server::Server(ServerConfig &config, PrimaryClient *primaryClient, deskflow::Scr
     LOG_INFO("default screen lock is on, locking cursor to screen");
     m_lockedToScreen = true;
   }
-
 }
 
 Server::~Server()
@@ -594,28 +593,22 @@ std::vector<Server::ServerConfig::ScreenRect> Server::getDisplays(const BaseClie
   std::vector<ServerConfig::ScreenRect> result;
   result.reserve(configured.size());
   for (const auto &display : configured) {
-    const int32_t x1 = runtimeX + static_cast<int32_t>(
-                                      std::lround(double(display.x - left) * runtimeWidth / configuredWidth)
-                                  );
-    const int32_t y1 = runtimeY + static_cast<int32_t>(
-                                      std::lround(double(display.y - top) * runtimeHeight / configuredHeight)
-                                  );
-    const int32_t x2 = runtimeX + static_cast<int32_t>(
-                                      std::lround(double(display.x + display.width - left) * runtimeWidth /
-                                                  configuredWidth)
-                                  );
-    const int32_t y2 = runtimeY + static_cast<int32_t>(
-                                      std::lround(double(display.y + display.height - top) * runtimeHeight /
-                                                  configuredHeight)
-                                  );
+    const int32_t x1 =
+        runtimeX + static_cast<int32_t>(std::lround(double(display.x - left) * runtimeWidth / configuredWidth));
+    const int32_t y1 =
+        runtimeY + static_cast<int32_t>(std::lround(double(display.y - top) * runtimeHeight / configuredHeight));
+    const int32_t x2 =
+        runtimeX +
+        static_cast<int32_t>(std::lround(double(display.x + display.width - left) * runtimeWidth / configuredWidth));
+    const int32_t y2 =
+        runtimeY +
+        static_cast<int32_t>(std::lround(double(display.y + display.height - top) * runtimeHeight / configuredHeight));
     result.push_back({x1, y1, std::max<int32_t>(1, x2 - x1), std::max<int32_t>(1, y2 - y1)});
   }
   return result;
 }
 
-bool Server::getDisplayAt(
-    const BaseClientProxy *client, int32_t x, int32_t y, ServerConfig::ScreenRect &result
-) const
+bool Server::getDisplayAt(const BaseClientProxy *client, int32_t x, int32_t y, ServerConfig::ScreenRect &result) const
 {
   const auto displays = getDisplays(client);
   for (const auto &display : displays) {
@@ -695,9 +688,8 @@ bool Server::mapToDisplay(
   const auto [destinationLayoutX, destinationLayoutY] = m_config->getLayoutPosition(getName(dst));
 
   const bool horizontal = dir == Direction::Left || dir == Direction::Right;
-  const double sourceCoordinate = horizontal
-                                      ? sourceBounds.y + double(y - sy) * sourceBounds.height / sh
-                                      : sourceBounds.x + double(x - sx) * sourceBounds.width / sw;
+  const double sourceCoordinate = horizontal ? sourceBounds.y + double(y - sy) * sourceBounds.height / sh
+                                             : sourceBounds.x + double(x - sx) * sourceBounds.width / sw;
   const double workspaceCoordinate = sourceCoordinate + (horizontal ? sourceLayoutY : sourceLayoutX);
 
   for (const auto &sourceDisplay : sourceDisplays) {
@@ -712,20 +704,18 @@ bool Server::mapToDisplay(
       switch (dir) {
         using enum Direction;
       case Left:
-        touching = sourceDisplay.x + sourceLayoutX ==
-                   destinationDisplay.x + destinationLayoutX + destinationDisplay.width;
+        touching =
+            sourceDisplay.x + sourceLayoutX == destinationDisplay.x + destinationLayoutX + destinationDisplay.width;
         break;
       case Right:
-        touching = sourceDisplay.x + sourceLayoutX + sourceDisplay.width ==
-                   destinationDisplay.x + destinationLayoutX;
+        touching = sourceDisplay.x + sourceLayoutX + sourceDisplay.width == destinationDisplay.x + destinationLayoutX;
         break;
       case Top:
-        touching = sourceDisplay.y + sourceLayoutY ==
-                   destinationDisplay.y + destinationLayoutY + destinationDisplay.height;
+        touching =
+            sourceDisplay.y + sourceLayoutY == destinationDisplay.y + destinationLayoutY + destinationDisplay.height;
         break;
       case Bottom:
-        touching = sourceDisplay.y + sourceLayoutY + sourceDisplay.height ==
-                   destinationDisplay.y + destinationLayoutY;
+        touching = sourceDisplay.y + sourceLayoutY + sourceDisplay.height == destinationDisplay.y + destinationLayoutY;
         break;
       case NoDirection:
         break;
@@ -742,8 +732,7 @@ bool Server::mapToDisplay(
       const int32_t inset = std::max<int32_t>(1, getJumpZoneSize(dst));
       if (horizontal) {
         y = dy + static_cast<int32_t>(std::lround(
-                     (workspaceCoordinate - destinationLayoutY - destinationBounds.y) * dh /
-                     destinationBounds.height
+                     (workspaceCoordinate - destinationLayoutY - destinationBounds.y) * dh / destinationBounds.height
                  ));
         y = std::clamp(
             y, destinationRuntimeDisplay.y, destinationRuntimeDisplay.y + destinationRuntimeDisplay.height - 1
@@ -753,15 +742,15 @@ bool Server::mapToDisplay(
                                     : destinationRuntimeDisplay.x + destinationRuntimeDisplay.width - 1 - displayInset;
       } else {
         x = dx + static_cast<int32_t>(std::lround(
-                     (workspaceCoordinate - destinationLayoutX - destinationBounds.x) * dw /
-                     destinationBounds.width
+                     (workspaceCoordinate - destinationLayoutX - destinationBounds.x) * dw / destinationBounds.width
                  ));
         x = std::clamp(
             x, destinationRuntimeDisplay.x, destinationRuntimeDisplay.x + destinationRuntimeDisplay.width - 1
         );
         const int32_t displayInset = std::min(inset, destinationRuntimeDisplay.height - 1);
-        y = dir == Direction::Bottom ? destinationRuntimeDisplay.y + displayInset
-                                     : destinationRuntimeDisplay.y + destinationRuntimeDisplay.height - 1 - displayInset;
+        y = dir == Direction::Bottom
+                ? destinationRuntimeDisplay.y + displayInset
+                : destinationRuntimeDisplay.y + destinationRuntimeDisplay.height - 1 - displayInset;
       }
       return true;
     }
@@ -769,9 +758,8 @@ bool Server::mapToDisplay(
   return false;
 }
 
-BaseClientProxy *Server::getNeighbor(
-    const BaseClientProxy *src, Direction dir, int32_t &x, int32_t &y, bool *usedDisplayLayout
-) const
+BaseClientProxy *
+Server::getNeighbor(const BaseClientProxy *src, Direction dir, int32_t &x, int32_t &y, bool *usedDisplayLayout) const
 {
   // note -- must be locked on entry
 
