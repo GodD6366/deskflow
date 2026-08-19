@@ -18,6 +18,7 @@
 #include <iosfwd>
 #include <map>
 #include <set>
+#include <vector>
 
 namespace deskflow::server {
 class Config;
@@ -54,6 +55,18 @@ class Config
 public:
   using ScreenOptions = std::map<OptionID, OptionValue>;
   using Interval = std::pair<float, float>;
+
+  struct ScreenRect
+  {
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t width = 0;
+    int32_t height = 0;
+
+    bool operator==(const ScreenRect &) const = default;
+  };
+  using ScreenRects = std::vector<ScreenRect>;
+  using LayoutPosition = std::pair<int32_t, int32_t>;
 
   class CellEdge
   {
@@ -214,6 +227,10 @@ public:
   */
   bool addAlias(const std::string &canonical, const std::string &alias);
 
+  //! Add a physical display rectangle to a computer's local desktop geometry.
+  bool addDisplay(const std::string &name, const ScreenRect &display);
+  bool setLayoutPosition(const std::string &name, const LayoutPosition &position);
+
   //! Connect screens
   /*!
   Establishes a one-way connection between portions of opposite edges
@@ -351,6 +368,10 @@ public:
   */
   const ScreenOptions *getOptions(const std::string &name) const;
 
+  //! Get configured physical displays. Empty means legacy single-rectangle behavior.
+  const ScreenRects &getDisplays(const std::string &name) const;
+  LayoutPosition getLayoutPosition(const std::string &name) const;
+
   //! Check for lock to screen action
   /*!
   Returns \c true if this configuration has a lock to screen action.
@@ -399,6 +420,7 @@ private:
   void readSectionScreens(ConfigReadContext &);
   void readSectionLinks(ConfigReadContext &);
   void readSectionAliases(ConfigReadContext &);
+  void readSectionDisplays(ConfigReadContext &);
 
   InputFilter::Condition *
   parseCondition(const ConfigReadContext &, const std::string &condition, const std::vector<std::string> &args);
@@ -416,6 +438,8 @@ private:
   NameMap m_nameToCanonicalName;
   NetworkAddress m_deskflowAddress;
   ScreenOptions m_globalOptions;
+  std::map<std::string, ScreenRects, deskflow::string::CaselessCmp> m_displays;
+  std::map<std::string, LayoutPosition, deskflow::string::CaselessCmp> m_layoutPositions;
   InputFilter m_inputFilter;
   bool m_hasLockToScreenAction = false;
   IEventQueue *m_events;

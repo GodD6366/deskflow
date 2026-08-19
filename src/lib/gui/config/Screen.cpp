@@ -17,6 +17,8 @@ using enum ScreenConfig::Fix;
 Screen::Screen(const QString &name)
 {
   setName(name);
+  if (!name.isEmpty())
+    ensureDefaultDisplay();
 }
 
 void Screen::loadSettings(QSettingsProxy &settings)
@@ -26,6 +28,23 @@ void Screen::loadSettings(QSettingsProxy &settings)
 
   if (name.isEmpty())
     return;
+
+  m_LayoutPosition = settings.value("layoutPosition").toPoint();
+  const int displayCount = settings.beginReadArray("displays");
+  QList<QRect> displays;
+  displays.reserve(displayCount);
+  for (int i = 0; i < displayCount; ++i) {
+    settings.setArrayIndex(i);
+    const QRect geometry = settings.value("geometry").toRect();
+    if (geometry.width() > 0 && geometry.height() > 0)
+      displays.append(geometry);
+  }
+  settings.endArray();
+  if (!displays.isEmpty()) {
+    m_DisplayGeometries = displays;
+  } else {
+    ensureDefaultDisplay();
+  }
 
   setSwitchCornerSize(settings.value("switchCornerSize").toInt());
 
@@ -46,6 +65,14 @@ void Screen::saveSettings(QSettingsProxy &settings) const
     return;
 
   Settings::setValue(Settings::Screen::Aliases.arg(screenName), m_Aliases);
+
+  settings.setValue("layoutPosition", m_LayoutPosition);
+  settings.beginWriteArray("displays");
+  for (int i = 0; i < m_DisplayGeometries.size(); ++i) {
+    settings.setArrayIndex(i);
+    settings.setValue("geometry", m_DisplayGeometries.at(i));
+  }
+  settings.endArray();
 
   settings.setValue("switchCornerSize", switchCornerSize());
 
@@ -83,5 +110,39 @@ bool Screen::operator==(const Screen &screen) const
 {
   return m_Name == screen.m_Name && m_Aliases == screen.m_Aliases && m_Modifiers == screen.m_Modifiers &&
          m_SwitchCorners == screen.m_SwitchCorners && m_SwitchCornerSize == screen.m_SwitchCornerSize &&
-         m_Fixes == screen.m_Fixes && m_Swapped == screen.m_Swapped && m_isServer == screen.m_isServer;
+         m_Fixes == screen.m_Fixes && m_Swapped == screen.m_Swapped && m_isServer == screen.m_isServer &&
+         m_LayoutPosition == screen.m_LayoutPosition && m_DisplayGeometries == screen.m_DisplayGeometries;
+}
+
+QRect Screen::displayBounds() const
+{
+  QRect bounds;
+  for (const auto &geometry : m_DisplayGeometries)
+    bounds = bounds.isNull() ? geometry : bounds.united(geometry);
+  return bounds;
+}
+
+QList<QRect> Screen::workspaceDisplayGeometries() const
+{
+  QList<QRect> result;
+  result.reserve(m_DisplayGeometries.size());
+  for (const auto &geometry : m_DisplayGeometries)
+    result.append(geometry.translated(m_LayoutPosition));
+  return result;
+}
+
+void Screen::setDisplayGeometries(const QList<QRect> &geometries)
+{
+  m_DisplayGeometries.clear();
+  for (const auto &geometry : geometries) {
+    if (geometry.width() > 0 && geometry.height() > 0)
+      m_DisplayGeometries.append(geometry);
+  }
+  ensureDefaultDisplay();
+}
+
+void Screen::ensureDefaultDisplay()
+{
+  if (m_DisplayGeometries.isEmpty())
+    m_DisplayGeometries.append(QRect(0, 0, 1920, 1080));
 }

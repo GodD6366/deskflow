@@ -50,7 +50,7 @@
             <bool>true</bool>
            </property>
            <property name="toolTip">
-            <string>Drag a computer from the grid to the trashcan to remove it.</string>
+            <string>Drag a computer here to remove it.</string>
            </property>
            <property name="frameShape">
             <enum>QFrame::Shape::StyledPanel</enum>
@@ -88,7 +88,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Configure the layout of your computer displays by dragging to where you want.</string>
+            <string>Display layout</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -117,7 +117,7 @@
          <item>
           <widget class="NewScreenWidget" name="lblNewScreen">
            <property name="toolTip">
-            <string>Drag to the grid to add a new computer.</string>
+            <string>Drag to the layout to add a new computer.</string>
            </property>
            <property name="frameShape">
             <enum>QFrame::Shape::StyledPanel</enum>
@@ -886,7 +886,7 @@ Enabling this setting will disable the server config GUI.</string>
  <customwidgets>
   <customwidget>
    <class>ScreenSetupView</class>
-   <extends>QTableView</extends>
+   <extends>QGraphicsView</extends>
    <header>widgets/ScreenSetupView.h</header>
    <container>1</container>
   </customwidget>

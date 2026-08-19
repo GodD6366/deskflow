@@ -15,6 +15,8 @@
 #include <QIcon>
 #include <QList>
 #include <QPixmap>
+#include <QPoint>
+#include <QRect>
 #include <QString>
 #include <QStringList>
 
@@ -31,13 +33,15 @@ class Screen : public ScreenConfig
   friend QDataStream &operator<<(QDataStream &outStream, const Screen &screen)
   {
     return outStream << screen.name() << screen.switchCornerSize() << screen.aliases() << screen.modifiers()
-                     << screen.switchCorners() << screen.fixes() << screen.isServer();
+                     << screen.switchCorners() << screen.fixes() << screen.isServer() << screen.layoutPosition()
+                     << screen.displayGeometries();
   }
 
   friend QDataStream &operator>>(QDataStream &inStream, Screen &screen)
   {
     return inStream >> screen.m_Name >> screen.m_SwitchCornerSize >> screen.m_Aliases >> screen.m_Modifiers >>
-           screen.m_SwitchCorners >> screen.m_Fixes >> screen.m_isServer;
+           screen.m_SwitchCorners >> screen.m_Fixes >> screen.m_isServer >> screen.m_LayoutPosition >>
+           screen.m_DisplayGeometries;
   }
 
 public:
@@ -55,6 +59,16 @@ public:
   {
     return m_Aliases;
   }
+  [[nodiscard]] const QPoint &layoutPosition() const
+  {
+    return m_LayoutPosition;
+  }
+  [[nodiscard]] const QList<QRect> &displayGeometries() const
+  {
+    return m_DisplayGeometries;
+  }
+  [[nodiscard]] QRect displayBounds() const;
+  [[nodiscard]] QList<QRect> workspaceDisplayGeometries() const;
 
   [[nodiscard]] bool isNull() const
   {
@@ -103,6 +117,12 @@ public:
   {
     m_Name = name;
   }
+  void setLayoutPosition(const QPoint &position)
+  {
+    m_LayoutPosition = position;
+  }
+  void setDisplayGeometries(const QList<QRect> &geometries);
+  void ensureDefaultDisplay();
   [[nodiscard]] bool isServer() const
   {
     return m_isServer;
@@ -166,4 +186,6 @@ private:
   QList<bool> m_Fixes{false, false, false, false};
   bool m_Swapped = false;
   bool m_isServer = false;
+  QPoint m_LayoutPosition;
+  QList<QRect> m_DisplayGeometries;
 };

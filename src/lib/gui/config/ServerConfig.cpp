@@ -14,22 +14,12 @@
 #include <QAbstractButton>
 #include <QPushButton>
 
+#include <algorithm>
+#include <tuple>
+
 using enum ScreenConfig::Modifier;
 using enum ScreenConfig::SwitchCorner;
 using enum ScreenConfig::Fix;
-
-static const struct
-{
-  int x;
-  int y;
-  const char *name;
-} neighbourDirs[] = {
-    {1, 0, "right"},
-    {-1, 0, "left"},
-    {0, -1, "up"},
-    {0, 1, "down"},
-
-};
 
 const int serverDefaultIndex = 7;
 
@@ -136,6 +126,24 @@ void ServerConfig::recall()
   settings().endArray();
 
   settings().endGroup();
+
+  // Migrate the old fixed grid to equivalent pixel-space positions. New
+  // layouts persist their own positions, including (0, 0), so only migrate a
+  // configuration when every populated screen still has the default origin.
+  const bool needsLayoutMigration = std::ranges::all_of(screens(), [](const Screen &screen) {
+    return screen.isNull() || screen.layoutPosition().isNull();
+  });
+  if (needsLayoutMigration) {
+    const int centerColumn = m_columns / 2;
+    const int centerRow = m_rows / 2;
+    for (int i = 0; i < screens().size(); ++i) {
+      if (!screens()[i].isNull()) {
+        screens()[i].setLayoutPosition(
+            QPoint((i % m_columns - centerColumn) * 1920, (i / m_columns - centerRow) * 1080)
+        );
+      }
+    }
+  }
 }
 
 int ServerConfig::adjacentScreenIndex(int idx, int deltaColumn, int deltaRow) const
@@ -169,16 +177,126 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
 
   outStream << "section: links" << Qt::endl;
 
-  for (int i = 0; const auto &screen : config.screens()) {
+  struct Link
+  {
+    QString side;
+    double sourceStart;
+    double sourceEnd;
+    QString destination;
+    double destinationStart;
+    double destinationEnd;
+  };
+
+  const auto intervalText = [](double start, double end) {
+    constexpr double epsilon = 0.00001;
+    if (start <= epsilon && end >= 1.0 - epsilon)
+      return QString();
+    return QStringLiteral("(%1,%2)")
+        .arg(QString::number(start * 100.0, 'g', 8), QString::number(end * 100.0, 'g', 8));
+  };
+
+  for (const auto &screen : config.screens()) {
     if (!screen.isNull()) {
       outStream << "\t" << screen.name() << ":\n";
-      for (const auto &neighbour : std::as_const(neighbourDirs)) {
-        int idx = config.adjacentScreenIndex(i, neighbour.x, neighbour.y);
-        if (idx != -1 && !config.screens()[idx].isNull())
-          outStream << "\t\t" << neighbour.name << " = " << config.screens()[idx].name() << Qt::endl;
+
+      QList<Link> links;
+      const QRect sourceBounds = screen.displayBounds();
+      for (const auto &sourceDisplay : screen.workspaceDisplayGeometries()) {
+        for (const auto &destinationScreen : config.screens()) {
+          if (destinationScreen.isNull() || destinationScreen.name() == screen.name())
+            continue;
+
+          const QRect destinationBounds = destinationScreen.displayBounds();
+          for (const auto &destinationDisplay : destinationScreen.workspaceDisplayGeometries()) {
+            if (sourceDisplay.right() + 1 == destinationDisplay.left()) {
+              const int start = std::max(sourceDisplay.top(), destinationDisplay.top());
+              const int end = std::min(sourceDisplay.bottom() + 1, destinationDisplay.bottom() + 1);
+              if (start < end) {
+                links.append({
+                    QStringLiteral("right"),
+                    double(start - screen.layoutPosition().y() - sourceBounds.top()) / sourceBounds.height(),
+                    double(end - screen.layoutPosition().y() - sourceBounds.top()) / sourceBounds.height(),
+                    destinationScreen.name(),
+                    double(start - destinationScreen.layoutPosition().y() - destinationBounds.top()) /
+                        destinationBounds.height(),
+                    double(end - destinationScreen.layoutPosition().y() - destinationBounds.top()) /
+                        destinationBounds.height(),
+                });
+              }
+            }
+            if (sourceDisplay.left() == destinationDisplay.right() + 1) {
+              const int start = std::max(sourceDisplay.top(), destinationDisplay.top());
+              const int end = std::min(sourceDisplay.bottom() + 1, destinationDisplay.bottom() + 1);
+              if (start < end) {
+                links.append({
+                    QStringLiteral("left"),
+                    double(start - screen.layoutPosition().y() - sourceBounds.top()) / sourceBounds.height(),
+                    double(end - screen.layoutPosition().y() - sourceBounds.top()) / sourceBounds.height(),
+                    destinationScreen.name(),
+                    double(start - destinationScreen.layoutPosition().y() - destinationBounds.top()) /
+                        destinationBounds.height(),
+                    double(end - destinationScreen.layoutPosition().y() - destinationBounds.top()) /
+                        destinationBounds.height(),
+                });
+              }
+            }
+            if (sourceDisplay.bottom() + 1 == destinationDisplay.top()) {
+              const int start = std::max(sourceDisplay.left(), destinationDisplay.left());
+              const int end = std::min(sourceDisplay.right() + 1, destinationDisplay.right() + 1);
+              if (start < end) {
+                links.append({
+                    QStringLiteral("down"),
+                    double(start - screen.layoutPosition().x() - sourceBounds.left()) / sourceBounds.width(),
+                    double(end - screen.layoutPosition().x() - sourceBounds.left()) / sourceBounds.width(),
+                    destinationScreen.name(),
+                    double(start - destinationScreen.layoutPosition().x() - destinationBounds.left()) /
+                        destinationBounds.width(),
+                    double(end - destinationScreen.layoutPosition().x() - destinationBounds.left()) /
+                        destinationBounds.width(),
+                });
+              }
+            }
+            if (sourceDisplay.top() == destinationDisplay.bottom() + 1) {
+              const int start = std::max(sourceDisplay.left(), destinationDisplay.left());
+              const int end = std::min(sourceDisplay.right() + 1, destinationDisplay.right() + 1);
+              if (start < end) {
+                links.append({
+                    QStringLiteral("up"),
+                    double(start - screen.layoutPosition().x() - sourceBounds.left()) / sourceBounds.width(),
+                    double(end - screen.layoutPosition().x() - sourceBounds.left()) / sourceBounds.width(),
+                    destinationScreen.name(),
+                    double(start - destinationScreen.layoutPosition().x() - destinationBounds.left()) /
+                        destinationBounds.width(),
+                    double(end - destinationScreen.layoutPosition().x() - destinationBounds.left()) /
+                        destinationBounds.width(),
+                });
+              }
+            }
+          }
+        }
+      }
+
+      std::ranges::sort(links, {}, [](const Link &link) { return std::tuple(link.side, link.sourceStart); });
+      for (const auto &link : std::as_const(links)) {
+        outStream << "\t\t" << link.side << intervalText(link.sourceStart, link.sourceEnd) << " = "
+                  << link.destination << intervalText(link.destinationStart, link.destinationEnd) << Qt::endl;
       }
     }
-    i++;
+  }
+
+  outStream << "end" << Qt::endl << Qt::endl;
+
+  outStream << "section: displays" << Qt::endl;
+
+  for (const auto &screen : config.screens()) {
+    if (screen.isNull())
+      continue;
+    outStream << "\t" << screen.name() << ":" << Qt::endl;
+    outStream << "\t\tposition = " << screen.layoutPosition().x() << "," << screen.layoutPosition().y() << Qt::endl;
+    for (const auto &display : screen.displayGeometries()) {
+      outStream << "\t\tdisplay = " << display.x() << "," << display.y() << "," << display.width() << ","
+                << display.height() << Qt::endl;
+    }
   }
 
   outStream << "end" << Qt::endl << Qt::endl;

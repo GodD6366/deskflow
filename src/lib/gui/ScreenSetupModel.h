@@ -53,6 +53,8 @@ public:
   QStringList mimeTypes() const override;
   QMimeData *mimeData(const QModelIndexList &indexes) const override;
   bool isFull() const;
+  int addScreenAt(const Screen &newScreen, const QPoint &position);
+  void removeScreen(int index);
 
 Q_SIGNALS:
   void screensChanged();

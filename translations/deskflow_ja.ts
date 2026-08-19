@@ -880,12 +880,71 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <source>Alt &amp;Gr</source>
         <translation>Alt &amp;Gr</translation>
     </message>
+    <message>
+        <source>Displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Y</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Height</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detect local displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid display geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display width and height must be positive whole numbers.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ScreenSetupModel</name>
     <message>
         <source>&lt;center&gt;Screen: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;Double click to edit settings&lt;br&gt;Drag screen to the trashcan to remove it</source>
         <translation>&lt;center&gt;コンピューター: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;ダブルクリックで設定&lt;br&gt;ゴミ箱にドラッグして削除</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenSetupView</name>
+    <message>
+        <source>%1 - %2 display(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove computer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -919,15 +978,15 @@ Additionally, check you are able to %1 the server config file: %2</source>
     </message>
     <message>
         <source>Drag a computer from the grid to the trashcan to remove it.</source>
-        <translation>コンピューターを削除するには、ゴミ箱にドラッグしてください。</translation>
+        <translation type="vanished">コンピューターを削除するには、ゴミ箱にドラッグしてください。</translation>
     </message>
     <message>
         <source>Configure the layout of your computer displays by dragging to where you want.</source>
-        <translation>コンピューターの画面を置きたい場所にドラッグして画面配置を設定してください。</translation>
+        <translation type="vanished">コンピューターの画面を置きたい場所にドラッグして画面配置を設定してください。</translation>
     </message>
     <message>
         <source>Drag to the grid to add a new computer.</source>
-        <translation>新しいコンピューターを追加するには、下の枠にドラッグしてください。</translation>
+        <translation type="vanished">新しいコンピューターを追加するには、下の枠にドラッグしてください。</translation>
     </message>
     <message>
         <source>Hotkeys</source>
@@ -1061,6 +1120,18 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation>起動時にコンピューター間移動のロックを有効にする</translation>
+    </message>
+    <message>
+        <source>Drag a computer here to remove it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to the layout to add a new computer.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

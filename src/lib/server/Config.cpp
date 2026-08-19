@@ -17,9 +17,11 @@
 #include "server/Server.h"
 
 #include <assert.h>
+#include <algorithm>
 #include <cstdlib>
 #include <istream>
 #include <ostream>
+#include <sstream>
 
 using namespace deskflow::string;
 
@@ -45,6 +47,7 @@ bool Config::addScreen(const std::string &name)
 
   // add name
   m_nameToCanonicalName.try_emplace(name, name);
+  m_layoutPositions.try_emplace(name, LayoutPosition{});
 
   // add aliases
   const auto aliases = Settings::value(Settings::Screen::Aliases.arg(QString::fromStdString(name))).toStringList();
@@ -69,6 +72,26 @@ bool Config::addAlias(const std::string &canonical, const std::string &alias)
   // insert alias
   m_nameToCanonicalName.try_emplace(alias, canonical);
 
+  return true;
+}
+
+bool Config::addDisplay(const std::string &name, const ScreenRect &display)
+{
+  const auto canonical = getCanonicalName(name);
+  if (canonical.empty() || display.width <= 0 || display.height <= 0) {
+    return false;
+  }
+  m_displays[canonical].push_back(display);
+  return true;
+}
+
+bool Config::setLayoutPosition(const std::string &name, const LayoutPosition &position)
+{
+  const auto canonical = getCanonicalName(name);
+  if (canonical.empty()) {
+    return false;
+  }
+  m_layoutPositions[canonical] = position;
   return true;
 }
 
@@ -320,6 +343,19 @@ const Config::ScreenOptions *Config::getOptions(const std::string &name) const
   return options;
 }
 
+const Config::ScreenRects &Config::getDisplays(const std::string &name) const
+{
+  static const ScreenRects empty;
+  const auto displays = m_displays.find(getCanonicalName(name));
+  return displays == m_displays.end() ? empty : displays->second;
+}
+
+Config::LayoutPosition Config::getLayoutPosition(const std::string &name) const
+{
+  const auto position = m_layoutPositions.find(getCanonicalName(name));
+  return position == m_layoutPositions.end() ? LayoutPosition{} : position->second;
+}
+
 bool Config::hasLockToScreenAction() const
 {
   return m_hasLockToScreenAction;
@@ -339,6 +375,12 @@ bool Config::operator==(const Config &x) const
 
   // compare global options
   if (m_globalOptions != x.m_globalOptions) {
+    return false;
+  }
+  if (m_displays != x.m_displays) {
+    return false;
+  }
+  if (m_layoutPositions != x.m_layoutPositions) {
     return false;
   }
 
@@ -413,6 +455,7 @@ void Config::readSection(ConfigReadContext &s)
   static const char s_screens[] = "screens";
   static const char s_links[] = "links";
   static const char s_aliases[] = "aliases";
+  static const char s_displays[] = "displays";
 
   std::string line;
   if (!s.readLine(line)) {
@@ -445,9 +488,59 @@ void Config::readSection(ConfigReadContext &s)
     readSectionAliases(s);
   } else if (name == s_links) {
     readSectionLinks(s);
+  } else if (name == s_displays) {
+    readSectionDisplays(s);
   } else {
     throw ServerConfigReadException(s, "unknown section name \"%{1}\"", name);
   }
+}
+
+void Config::readSectionDisplays(ConfigReadContext &s)
+{
+  std::string line;
+  std::string screen;
+  while (s.readLine(line)) {
+    if (line == "end") {
+      return;
+    }
+
+    if (line.back() == ':') {
+      screen = line.substr(0, line.size() - 1);
+      if (!isCanonicalName(screen)) {
+        throw ServerConfigReadException(s, "unknown or non-canonical screen name \"%{1}\"", screen);
+      }
+      continue;
+    }
+    if (screen.empty()) {
+      throw ServerConfigReadException(s, "display before first screen");
+    }
+
+    const auto equals = line.find('=');
+    if (equals == std::string::npos) {
+      throw ServerConfigReadException(s, "invalid display geometry");
+    }
+
+    const std::string argument = line.substr(0, line.find_first_of(" \t="));
+    std::string value = line.substr(equals + 1);
+    std::replace(value.begin(), value.end(), ',', ' ');
+    std::istringstream values(value);
+    std::string extra;
+    if (argument == "position") {
+      LayoutPosition position;
+      if (!(values >> position.first >> position.second) || values >> extra || !setLayoutPosition(screen, position)) {
+        throw ServerConfigReadException(s, "invalid display layout position");
+      }
+    } else if (argument == "display") {
+      ScreenRect display;
+      if (!(values >> display.x >> display.y >> display.width >> display.height) || values >> extra ||
+          !addDisplay(screen, display)) {
+        throw ServerConfigReadException(s, "invalid display geometry");
+      }
+    } else {
+      throw ServerConfigReadException(s, "invalid display geometry");
+    }
+  }
+  throw ServerConfigReadException(s, "unexpected end of displays section");
 }
 
 void Config::readSectionOptions(ConfigReadContext &s)
@@ -1398,6 +1491,19 @@ std::ostream &operator<<(std::ostream &s, const Config &config)
          link != nend; ++link) {
       s << "\t\t" << Config::dirName(link->first.getSide()) << Config::formatInterval(link->first.getInterval())
         << " = " << link->second.getName().c_str() << Config::formatInterval(link->second.getInterval()) << std::endl;
+    }
+  }
+  s << "end" << std::endl;
+
+  // physical displays section
+  s << "section: displays" << std::endl;
+  for (const auto &screen : config) {
+    s << "\t" << screen.c_str() << ":" << std::endl;
+    const auto [x, y] = config.getLayoutPosition(screen);
+    s << "\t\tposition = " << x << "," << y << std::endl;
+    for (const auto &display : config.getDisplays(screen)) {
+      s << "\t\tdisplay = " << display.x << "," << display.y << "," << display.width << "," << display.height
+        << std::endl;
     }
   }
   s << "end" << std::endl;

@@ -878,12 +878,71 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <source>Alt &amp;Gr</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Y</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Height</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detect local displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid display geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display width and height must be positive whole numbers.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ScreenSetupModel</name>
     <message>
         <source>&lt;center&gt;Screen: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;Double click to edit settings&lt;br&gt;Drag screen to the trashcan to remove it</source>
         <translation>&lt;center&gt;Экран: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;Двойной клик для настроек&lt;br&gt;Перетащите экран в корзину для удаления</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenSetupView</name>
+    <message>
+        <source>%1 - %2 display(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove computer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -917,15 +976,15 @@ Additionally, check you are able to %1 the server config file: %2</source>
     </message>
     <message>
         <source>Drag a computer from the grid to the trashcan to remove it.</source>
-        <translation>Перетащите компьютер в корзину, чтобы удалить его.</translation>
+        <translation type="vanished">Перетащите компьютер в корзину, чтобы удалить его.</translation>
     </message>
     <message>
         <source>Configure the layout of your computer displays by dragging to where you want.</source>
-        <translation>Настройте расположение мониторов, перетаскивая их в нужные места.</translation>
+        <translation type="vanished">Настройте расположение мониторов, перетаскивая их в нужные места.</translation>
     </message>
     <message>
         <source>Drag to the grid to add a new computer.</source>
-        <translation>Перетащите на сетку, чтобы добавить компьютер.</translation>
+        <translation type="vanished">Перетащите на сетку, чтобы добавить компьютер.</translation>
     </message>
     <message>
         <source>Hotkeys</source>
@@ -1057,6 +1116,18 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation>Включать привязку к компьютеру при запуске</translation>
+    </message>
+    <message>
+        <source>Drag a computer here to remove it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to the layout to add a new computer.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

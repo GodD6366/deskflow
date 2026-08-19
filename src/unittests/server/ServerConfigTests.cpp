@@ -9,6 +9,8 @@
 
 #include "server/Config.h"
 
+#include <sstream>
+
 class OnlySystemFilter : public InputFilter::Condition
 {
 public:
@@ -159,6 +161,64 @@ void ServerConfigTests::equalityCheck_diff_neighbours3()
   QVERIFY(b.addScreen("screenC"));
   QVERIFY(b.connect("screenA", Direction::Bottom, 0.0f, 0.5f, "screenC", 0.5f, 1.0f));
   QVERIFY(a != b);
+}
+
+void ServerConfigTests::displayLayoutReadAndEquality()
+{
+  std::istringstream input(R"(section: screens
+computerA:
+computerB:
+end
+section: displays
+computerA:
+position = -1920,120
+display = 0,0,1920,1080
+display = 1920,-240,2560,1440
+computerB:
+position = 2560,0
+display = 0,0,3840,2160
+end
+)");
+
+  Config config(nullptr);
+  input >> config;
+
+  QVERIFY(config.getLayoutPosition("computerA") == Config::LayoutPosition(-1920, 120));
+  QCOMPARE(config.getDisplays("computerA").size(), size_t(2));
+  QVERIFY(config.getDisplays("computerA").at(1) == Config::ScreenRect({1920, -240, 2560, 1440}));
+
+  Config different(nullptr);
+  QVERIFY(different.addScreen("computerA"));
+  QVERIFY(different.addScreen("computerB"));
+  QVERIFY(config != different);
+
+  QVERIFY(different.setLayoutPosition("computerA", {-1920, 120}));
+  QVERIFY(different.addDisplay("computerA", {0, 0, 1920, 1080}));
+  QVERIFY(different.addDisplay("computerA", {1920, -240, 2560, 1440}));
+  QVERIFY(different.setLayoutPosition("computerB", {2560, 0}));
+  QVERIFY(different.addDisplay("computerB", {0, 0, 3840, 2160}));
+  QVERIFY(config == different);
+}
+
+void ServerConfigTests::displayLayoutSerialization()
+{
+  Config original(nullptr);
+  QVERIFY(original.addScreen("computerA"));
+  QVERIFY(original.addScreen("computerB"));
+  QVERIFY(original.setLayoutPosition("computerA", {-1920, 120}));
+  QVERIFY(original.addDisplay("computerA", {0, 0, 1920, 1080}));
+  QVERIFY(original.addDisplay("computerA", {1920, -240, 2560, 1440}));
+  QVERIFY(original.setLayoutPosition("computerB", {2560, 0}));
+  QVERIFY(original.addDisplay("computerB", {0, 0, 3840, 2160}));
+
+  std::stringstream serialized;
+  serialized << original;
+  const auto output = QString::fromStdString(serialized.str());
+  QVERIFY(output.contains("section: displays"));
+  QVERIFY(output.contains("position = -1920,120"));
+  QVERIFY(output.contains("display = 1920,-240,2560,1440"));
+  QVERIFY(output.contains("position = 2560,0"));
+  QVERIFY(output.contains("display = 0,0,3840,2160"));
 }
 
 QTEST_MAIN(ServerConfigTests)

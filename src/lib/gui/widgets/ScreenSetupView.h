@@ -7,37 +7,49 @@
 
 #pragma once
 
-#include <QFlags>
-#include <QTableView>
+#include <QGraphicsView>
 
 class QWidget;
 class QMouseEvent;
 class QResizeEvent;
 class QDragEnterEvent;
+class QDropEvent;
+class QKeyEvent;
+class QGraphicsScene;
+class QAbstractItemModel;
+class QPainter;
 class ScreenSetupModel;
 
-class ScreenSetupView : public QTableView
+class ScreenSetupView : public QGraphicsView
 {
   Q_OBJECT
 
 public:
-  explicit ScreenSetupView(QWidget *parent);
-  void setModel(QAbstractItemModel *model) override;
+  explicit ScreenSetupView(QWidget *parent = nullptr);
+  void setModel(QAbstractItemModel *model);
   ScreenSetupModel *model() const;
+  void reset();
+  QPointF snapPosition(int screenIndex, const QPointF &position) const;
+  void setScreenPosition(int screenIndex, const QPointF &position);
+  void finishScreenMove();
+  void editScreen(int screenIndex);
+  void removeScreen(int screenIndex);
+  void showDisplayIdentifier(int screenIndex, int displayIndex);
 
 private:
-  void showScreenConfig(int col, int row);
+  void rebuildScene();
+  void fitLayout();
 
 protected:
-  void mouseDoubleClickEvent(QMouseEvent *) override;
-  void setTableSize();
   void resizeEvent(QResizeEvent *) override;
   void dragEnterEvent(QDragEnterEvent *event) override;
   void dragMoveEvent(QDragMoveEvent *event) override;
-  void startDrag(Qt::DropActions supportedActions) override;
-  void initViewItemOption(QStyleOptionViewItem *option) const override;
-  void scrollTo(const QModelIndex &, ScrollHint) override
-  {
-    // do nothing
-  }
+  void dropEvent(QDropEvent *event) override;
+  void keyPressEvent(QKeyEvent *event) override;
+  void drawBackground(QPainter *painter, const QRectF &rect) override;
+
+private:
+  ScreenSetupModel *m_model = nullptr;
+  QGraphicsScene *m_scene = nullptr;
+  bool m_rebuilding = false;
 };

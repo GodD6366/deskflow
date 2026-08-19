@@ -25,10 +25,8 @@
 #include "server/ClientProxyUnknown.h"
 #include "server/PrimaryClient.h"
 
-#ifdef _WIN32
 #include <algorithm>
 #include <array>
-#endif
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -119,7 +117,6 @@ Server::Server(ServerConfig &config, PrimaryClient *primaryClient, deskflow::Scr
   m_events->addHandler(EventTypes::PrimaryScreenFakeInputEnd, m_inputFilter, [this](const auto &) {
     m_primaryClient->fakeInputEnd();
   });
-
   // add connection
   addClient(m_primaryClient);
 
@@ -139,6 +136,7 @@ Server::Server(ServerConfig &config, PrimaryClient *primaryClient, deskflow::Scr
     LOG_INFO("default screen lock is on, locking cursor to screen");
     m_lockedToScreen = true;
   }
+
 }
 
 Server::~Server()
@@ -567,7 +565,213 @@ bool Server::hasAnyNeighbor(const BaseClientProxy *client, Direction dir) const
   return m_config->hasNeighbor(getName(client), dir);
 }
 
-BaseClientProxy *Server::getNeighbor(const BaseClientProxy *src, Direction dir, int32_t &x, int32_t &y) const
+std::vector<Server::ServerConfig::ScreenRect> Server::getDisplays(const BaseClientProxy *client) const
+{
+  int32_t runtimeX;
+  int32_t runtimeY;
+  int32_t runtimeWidth;
+  int32_t runtimeHeight;
+  client->getShape(runtimeX, runtimeY, runtimeWidth, runtimeHeight);
+
+  const auto &configured = m_config->getDisplays(getName(client));
+  if (configured.empty()) {
+    return {{runtimeX, runtimeY, runtimeWidth, runtimeHeight}};
+  }
+
+  int32_t left = configured.front().x;
+  int32_t top = configured.front().y;
+  int32_t right = configured.front().x + configured.front().width;
+  int32_t bottom = configured.front().y + configured.front().height;
+  for (const auto &display : configured) {
+    left = std::min(left, display.x);
+    top = std::min(top, display.y);
+    right = std::max(right, display.x + display.width);
+    bottom = std::max(bottom, display.y + display.height);
+  }
+
+  const int32_t configuredWidth = right - left;
+  const int32_t configuredHeight = bottom - top;
+  std::vector<ServerConfig::ScreenRect> result;
+  result.reserve(configured.size());
+  for (const auto &display : configured) {
+    const int32_t x1 = runtimeX + static_cast<int32_t>(
+                                      std::lround(double(display.x - left) * runtimeWidth / configuredWidth)
+                                  );
+    const int32_t y1 = runtimeY + static_cast<int32_t>(
+                                      std::lround(double(display.y - top) * runtimeHeight / configuredHeight)
+                                  );
+    const int32_t x2 = runtimeX + static_cast<int32_t>(
+                                      std::lround(double(display.x + display.width - left) * runtimeWidth /
+                                                  configuredWidth)
+                                  );
+    const int32_t y2 = runtimeY + static_cast<int32_t>(
+                                      std::lround(double(display.y + display.height - top) * runtimeHeight /
+                                                  configuredHeight)
+                                  );
+    result.push_back({x1, y1, std::max<int32_t>(1, x2 - x1), std::max<int32_t>(1, y2 - y1)});
+  }
+  return result;
+}
+
+bool Server::getDisplayAt(
+    const BaseClientProxy *client, int32_t x, int32_t y, ServerConfig::ScreenRect &result
+) const
+{
+  const auto displays = getDisplays(client);
+  for (const auto &display : displays) {
+    if (x >= display.x && x < display.x + display.width && y >= display.y && y < display.y + display.height) {
+      result = display;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Server::isExternalDisplayEdge(
+    const BaseClientProxy *client, const ServerConfig::ScreenRect &display, Direction dir, int32_t x, int32_t y
+) const
+{
+  switch (dir) {
+    using enum Direction;
+  case Left:
+    x = display.x - 1;
+    break;
+  case Right:
+    x = display.x + display.width;
+    break;
+  case Top:
+    y = display.y - 1;
+    break;
+  case Bottom:
+    y = display.y + display.height;
+    break;
+  case NoDirection:
+    return false;
+  }
+
+  ServerConfig::ScreenRect adjacent;
+  return !getDisplayAt(client, x, y, adjacent);
+}
+
+bool Server::mapToDisplay(
+    const BaseClientProxy *src, const BaseClientProxy *dst, Direction dir, int32_t &x, int32_t &y
+) const
+{
+  const auto &sourceDisplays = m_config->getDisplays(getName(src));
+  const auto &destinationDisplays = m_config->getDisplays(getName(dst));
+  if (sourceDisplays.empty() || destinationDisplays.empty()) {
+    return false;
+  }
+
+  auto getBounds = [](const ServerConfig::ScreenRects &displays) {
+    ServerConfig::ScreenRect bounds = displays.front();
+    int32_t right = bounds.x + bounds.width;
+    int32_t bottom = bounds.y + bounds.height;
+    for (const auto &display : displays) {
+      bounds.x = std::min(bounds.x, display.x);
+      bounds.y = std::min(bounds.y, display.y);
+      right = std::max(right, display.x + display.width);
+      bottom = std::max(bottom, display.y + display.height);
+    }
+    bounds.width = right - bounds.x;
+    bounds.height = bottom - bounds.y;
+    return bounds;
+  };
+
+  int32_t sx;
+  int32_t sy;
+  int32_t sw;
+  int32_t sh;
+  src->getShape(sx, sy, sw, sh);
+  int32_t dx;
+  int32_t dy;
+  int32_t dw;
+  int32_t dh;
+  dst->getShape(dx, dy, dw, dh);
+  const auto destinationRuntimeDisplays = getDisplays(dst);
+  const auto sourceBounds = getBounds(sourceDisplays);
+  const auto destinationBounds = getBounds(destinationDisplays);
+  const auto [sourceLayoutX, sourceLayoutY] = m_config->getLayoutPosition(getName(src));
+  const auto [destinationLayoutX, destinationLayoutY] = m_config->getLayoutPosition(getName(dst));
+
+  const bool horizontal = dir == Direction::Left || dir == Direction::Right;
+  const double sourceCoordinate = horizontal
+                                      ? sourceBounds.y + double(y - sy) * sourceBounds.height / sh
+                                      : sourceBounds.x + double(x - sx) * sourceBounds.width / sw;
+  const double workspaceCoordinate = sourceCoordinate + (horizontal ? sourceLayoutY : sourceLayoutX);
+
+  for (const auto &sourceDisplay : sourceDisplays) {
+    const double sourceStart = horizontal ? sourceDisplay.y + sourceLayoutY : sourceDisplay.x + sourceLayoutX;
+    const double sourceEnd = sourceStart + (horizontal ? sourceDisplay.height : sourceDisplay.width);
+    if (workspaceCoordinate < sourceStart || workspaceCoordinate >= sourceEnd)
+      continue;
+
+    for (size_t destinationIndex = 0; destinationIndex < destinationDisplays.size(); ++destinationIndex) {
+      const auto &destinationDisplay = destinationDisplays[destinationIndex];
+      bool touching = false;
+      switch (dir) {
+        using enum Direction;
+      case Left:
+        touching = sourceDisplay.x + sourceLayoutX ==
+                   destinationDisplay.x + destinationLayoutX + destinationDisplay.width;
+        break;
+      case Right:
+        touching = sourceDisplay.x + sourceLayoutX + sourceDisplay.width ==
+                   destinationDisplay.x + destinationLayoutX;
+        break;
+      case Top:
+        touching = sourceDisplay.y + sourceLayoutY ==
+                   destinationDisplay.y + destinationLayoutY + destinationDisplay.height;
+        break;
+      case Bottom:
+        touching = sourceDisplay.y + sourceLayoutY + sourceDisplay.height ==
+                   destinationDisplay.y + destinationLayoutY;
+        break;
+      case NoDirection:
+        break;
+      }
+
+      const double destinationStart =
+          horizontal ? destinationDisplay.y + destinationLayoutY : destinationDisplay.x + destinationLayoutX;
+      const double destinationEnd =
+          destinationStart + (horizontal ? destinationDisplay.height : destinationDisplay.width);
+      if (!touching || workspaceCoordinate < destinationStart || workspaceCoordinate >= destinationEnd)
+        continue;
+
+      const auto &destinationRuntimeDisplay = destinationRuntimeDisplays.at(destinationIndex);
+      const int32_t inset = std::max<int32_t>(1, getJumpZoneSize(dst));
+      if (horizontal) {
+        y = dy + static_cast<int32_t>(std::lround(
+                     (workspaceCoordinate - destinationLayoutY - destinationBounds.y) * dh /
+                     destinationBounds.height
+                 ));
+        y = std::clamp(
+            y, destinationRuntimeDisplay.y, destinationRuntimeDisplay.y + destinationRuntimeDisplay.height - 1
+        );
+        const int32_t displayInset = std::min(inset, destinationRuntimeDisplay.width - 1);
+        x = dir == Direction::Right ? destinationRuntimeDisplay.x + displayInset
+                                    : destinationRuntimeDisplay.x + destinationRuntimeDisplay.width - 1 - displayInset;
+      } else {
+        x = dx + static_cast<int32_t>(std::lround(
+                     (workspaceCoordinate - destinationLayoutX - destinationBounds.x) * dw /
+                     destinationBounds.width
+                 ));
+        x = std::clamp(
+            x, destinationRuntimeDisplay.x, destinationRuntimeDisplay.x + destinationRuntimeDisplay.width - 1
+        );
+        const int32_t displayInset = std::min(inset, destinationRuntimeDisplay.height - 1);
+        y = dir == Direction::Bottom ? destinationRuntimeDisplay.y + displayInset
+                                     : destinationRuntimeDisplay.y + destinationRuntimeDisplay.height - 1 - displayInset;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+BaseClientProxy *Server::getNeighbor(
+    const BaseClientProxy *src, Direction dir, int32_t &x, int32_t &y, bool *usedDisplayLayout
+) const
 {
   // note -- must be locked on entry
 
@@ -599,7 +803,11 @@ BaseClientProxy *Server::getNeighbor(const BaseClientProxy *src, Direction dir, 
     // ready then we can stop.
     if (ClientList::const_iterator index = m_clients.find(dstName); index != m_clients.end()) {
       LOG_VERBOSE("\"%s\" is on %s of \"%s\" at %f", dstName.c_str(), Config::dirName(dir), srcName.c_str(), t);
-      mapToPixel(index->second, dir, tTmp, x, y);
+      const bool mapped = mapToDisplay(src, index->second, dir, x, y);
+      if (!mapped)
+        mapToPixel(index->second, dir, tTmp, x, y);
+      if (usedDisplayLayout)
+        *usedDisplayLayout = mapped;
       return index->second;
     }
 
@@ -619,9 +827,13 @@ BaseClientProxy *Server::mapToNeighbor(BaseClientProxy *src, Direction srcSide, 
   assert(src != nullptr);
 
   // get the first neighbor
-  BaseClientProxy *dst = getNeighbor(src, srcSide, x, y);
+  bool usedDisplayLayout = false;
+  BaseClientProxy *dst = getNeighbor(src, srcSide, x, y, &usedDisplayLayout);
   if (dst == nullptr) {
     return nullptr;
+  }
+  if (usedDisplayLayout) {
+    return dst;
   }
 
   // get the source screen's size
@@ -1624,18 +1836,22 @@ bool Server::onMouseMovePrimary(int32_t x, int32_t y)
   m_active->getShape(ax, ay, aw, ah);
   int32_t zoneSize = getJumpZoneSize(m_active);
 
-  // clamp position to screen
+  ServerConfig::ScreenRect activeDisplay{ax, ay, aw, ah};
+  getDisplayAt(m_active, x, y, activeDisplay);
+
+  // Clamp to the physical display under the pointer. The virtual desktop can
+  // contain gaps when monitors have different sizes or offsets.
   int32_t xc = x;
   int32_t yc = y;
-  if (xc < ax + zoneSize) {
-    xc = ax;
-  } else if (xc >= ax + aw - zoneSize) {
-    xc = ax + aw - 1;
+  if (xc < activeDisplay.x + zoneSize) {
+    xc = activeDisplay.x;
+  } else if (xc >= activeDisplay.x + activeDisplay.width - zoneSize) {
+    xc = activeDisplay.x + activeDisplay.width - 1;
   }
-  if (yc < ay + zoneSize) {
-    yc = ay;
-  } else if (yc >= ay + ah - zoneSize) {
-    yc = ay + ah - 1;
+  if (yc < activeDisplay.y + zoneSize) {
+    yc = activeDisplay.y;
+  } else if (yc >= activeDisplay.y + activeDisplay.height - zoneSize) {
+    yc = activeDisplay.y + activeDisplay.height - 1;
   }
 
   // see if we should change screens
@@ -1646,18 +1862,20 @@ bool Server::onMouseMovePrimary(int32_t x, int32_t y)
   auto dirv = NoDirection;
   int32_t xh = x;
   int32_t yv = y;
-  if (x < ax + zoneSize) {
-    xh -= zoneSize;
+  if (x < activeDisplay.x + zoneSize && isExternalDisplayEdge(m_active, activeDisplay, Left, x, y)) {
+    xh = ax - std::max<int32_t>(1, zoneSize);
     dirh = Left;
-  } else if (x >= ax + aw - zoneSize) {
-    xh += zoneSize;
+  } else if (x >= activeDisplay.x + activeDisplay.width - zoneSize &&
+             isExternalDisplayEdge(m_active, activeDisplay, Right, x, y)) {
+    xh = ax + aw + std::max<int32_t>(1, zoneSize);
     dirh = Right;
   }
-  if (y < ay + zoneSize) {
-    yv -= zoneSize;
+  if (y < activeDisplay.y + zoneSize && isExternalDisplayEdge(m_active, activeDisplay, Top, x, y)) {
+    yv = ay - std::max<int32_t>(1, zoneSize);
     dirv = Top;
-  } else if (y >= ay + ah - zoneSize) {
-    yv += zoneSize;
+  } else if (y >= activeDisplay.y + activeDisplay.height - zoneSize &&
+             isExternalDisplayEdge(m_active, activeDisplay, Bottom, x, y)) {
+    yv = ay + ah + std::max<int32_t>(1, zoneSize);
     dirv = Bottom;
   }
   if (dirh == NoDirection && dirv == NoDirection) {
@@ -1749,36 +1967,46 @@ void Server::onMouseMoveSecondary(int32_t dx, int32_t dy)
   int32_t aw;
   int32_t ah;
   m_active->getShape(ax, ay, aw, ah);
+  ServerConfig::ScreenRect oldDisplay{ax, ay, aw, ah};
+  getDisplayAt(m_active, xOld, yOld, oldDisplay);
 
   // find direction of neighbor and get the neighbor
   bool jump = true;
   BaseClientProxy *newScreen;
   do {
-    // clamp position to screen
+    // Clamp to the display the pointer was on. A point inside the virtual
+    // desktop bounding box may still be outside every physical display.
     int32_t xc = m_x;
     int32_t yc = m_y;
-    if (xc < ax) {
-      xc = ax;
-    } else if (xc >= ax + aw) {
-      xc = ax + aw - 1;
+    if (xc < oldDisplay.x) {
+      xc = oldDisplay.x;
+    } else if (xc >= oldDisplay.x + oldDisplay.width) {
+      xc = oldDisplay.x + oldDisplay.width - 1;
     }
-    if (yc < ay) {
-      yc = ay;
-    } else if (yc >= ay + ah) {
-      yc = ay + ah - 1;
+    if (yc < oldDisplay.y) {
+      yc = oldDisplay.y;
+    } else if (yc >= oldDisplay.y + oldDisplay.height) {
+      yc = oldDisplay.y + oldDisplay.height - 1;
     }
 
     Direction dir;
     using enum Direction;
-    if (m_x < ax) {
+    ServerConfig::ScreenRect newDisplay;
+    if (getDisplayAt(m_active, m_x, m_y, newDisplay)) {
+      dir = NoDirection;
+    } else if (m_x < oldDisplay.x) {
       dir = Left;
-    } else if (m_x > ax + aw - 1) {
+    } else if (m_x > oldDisplay.x + oldDisplay.width - 1) {
       dir = Right;
-    } else if (m_y < ay) {
+    } else if (m_y < oldDisplay.y) {
       dir = Top;
-    } else if (m_y > ay + ah - 1) {
+    } else if (m_y > oldDisplay.y + oldDisplay.height - 1) {
       dir = Bottom;
     } else {
+      dir = NoDirection;
+    }
+
+    if (dir == NoDirection) {
       // we haven't left the screen
       newScreen = m_active;
       jump = false;
@@ -1791,19 +2019,19 @@ void Server::onMouseMoveSecondary(int32_t dx, int32_t dy)
         int32_t zoneSize = m_primaryClient->getJumpZoneSize();
         switch (m_switchDir) {
         case Left:
-          clearWait = (m_x >= ax + zoneSize);
+          clearWait = (m_x >= oldDisplay.x + zoneSize);
           break;
 
         case Right:
-          clearWait = (m_x <= ax + aw - 1 - zoneSize);
+          clearWait = (m_x <= oldDisplay.x + oldDisplay.width - 1 - zoneSize);
           break;
 
         case Top:
-          clearWait = (m_y >= ay + zoneSize);
+          clearWait = (m_y >= oldDisplay.y + zoneSize);
           break;
 
         case Bottom:
-          clearWait = (m_y <= ay + ah - 1 + zoneSize);
+          clearWait = (m_y <= oldDisplay.y + oldDisplay.height - 1 + zoneSize);
           break;
 
         default:
@@ -1840,18 +2068,18 @@ void Server::onMouseMoveSecondary(int32_t dx, int32_t dy)
     // same screen.  clamp mouse to edge.
     m_x = xOld + dx;
     m_y = yOld + dy;
-    if (m_x < ax) {
-      m_x = ax;
+    if (m_x < oldDisplay.x) {
+      m_x = oldDisplay.x;
       LOG_VERBOSE("clamp to left of \"%s\"", getName(m_active).c_str());
-    } else if (m_x > ax + aw - 1) {
-      m_x = ax + aw - 1;
+    } else if (m_x > oldDisplay.x + oldDisplay.width - 1) {
+      m_x = oldDisplay.x + oldDisplay.width - 1;
       LOG_VERBOSE("clamp to right of \"%s\"", getName(m_active).c_str());
     }
-    if (m_y < ay) {
-      m_y = ay;
+    if (m_y < oldDisplay.y) {
+      m_y = oldDisplay.y;
       LOG_VERBOSE("clamp to top of \"%s\"", getName(m_active).c_str());
-    } else if (m_y > ay + ah - 1) {
-      m_y = ay + ah - 1;
+    } else if (m_y > oldDisplay.y + oldDisplay.height - 1) {
+      m_y = oldDisplay.y + oldDisplay.height - 1;
       LOG_VERBOSE("clamp to bottom of \"%s\"", getName(m_active).c_str());
     }
 

@@ -8,9 +8,13 @@
 #pragma once
 
 #include <QDialog>
+#include <QList>
+#include <QRect>
 
 class QWidget;
 class QString;
+class QTableWidget;
+class QToolButton;
 
 class Screen;
 class ScreenList;
@@ -35,8 +39,16 @@ private Q_SLOTS:
   void removeAlias() const;
   void checkNewAliasName(const QString &text);
   void aliasSelected();
+  void addDisplay();
+  void removeDisplay();
+  void detectLocalDisplays();
 
 private:
+  void populateDisplays(const QList<QRect> &displays);
+  QList<QRect> displayGeometries(bool *valid = nullptr) const;
+
   std::unique_ptr<Ui::ScreenSettingsDialog> ui;
   Screen *m_screen;
+  QTableWidget *m_displays = nullptr;
+  QToolButton *m_removeDisplay = nullptr;
 };

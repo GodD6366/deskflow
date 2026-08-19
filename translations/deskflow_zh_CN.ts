@@ -880,12 +880,71 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <source>Alt &amp;Gr</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Y</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Height</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detect local displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid display geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display width and height must be positive whole numbers.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ScreenSetupModel</name>
     <message>
         <source>&lt;center&gt;Screen: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;Double click to edit settings&lt;br&gt;Drag screen to the trashcan to remove it</source>
         <translation>&lt;center&gt;屏幕：&lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;双击编辑设置&lt;br&gt;将屏幕拖到垃圾桶以移除</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenSetupView</name>
+    <message>
+        <source>%1 - %2 display(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove computer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -919,15 +978,15 @@ Additionally, check you are able to %1 the server config file: %2</source>
     </message>
     <message>
         <source>Drag a computer from the grid to the trashcan to remove it.</source>
-        <translation>将计算机从网格拖到垃圾桶以将其移除。</translation>
+        <translation type="vanished">将计算机从网格拖到垃圾桶以将其移除。</translation>
     </message>
     <message>
         <source>Configure the layout of your computer displays by dragging to where you want.</source>
-        <translation>通过将计算机显示器拖动到所需位置来配置布局。</translation>
+        <translation type="vanished">通过将计算机显示器拖动到所需位置来配置布局。</translation>
     </message>
     <message>
         <source>Drag to the grid to add a new computer.</source>
-        <translation>拖动到网格以添加新计算机。</translation>
+        <translation type="vanished">拖动到网格以添加新计算机。</translation>
     </message>
     <message>
         <source>Hotkeys</source>
@@ -1061,6 +1120,18 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation type="unfinished">启动时启用锁定到计算机</translation>
+    </message>
+    <message>
+        <source>Drag a computer here to remove it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to the layout to add a new computer.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

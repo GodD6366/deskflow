@@ -241,7 +241,17 @@ private:
 
   // lookup neighboring screen, mapping the coordinate independent of
   // the direction to the neighbor's coordinate space.
-  BaseClientProxy *getNeighbor(const BaseClientProxy *, Direction, int32_t &x, int32_t &y) const;
+  BaseClientProxy *
+  getNeighbor(const BaseClientProxy *, Direction, int32_t &x, int32_t &y, bool *usedDisplayLayout = nullptr) const;
+
+  std::vector<ServerConfig::ScreenRect> getDisplays(const BaseClientProxy *) const;
+  bool getDisplayAt(const BaseClientProxy *, int32_t x, int32_t y, ServerConfig::ScreenRect &) const;
+  bool isExternalDisplayEdge(
+      const BaseClientProxy *, const ServerConfig::ScreenRect &, Direction, int32_t x, int32_t y
+  ) const;
+  bool mapToDisplay(
+      const BaseClientProxy *src, const BaseClientProxy *dst, Direction, int32_t &x, int32_t &y
+  ) const;
 
   // lookup neighboring screen.  given a position relative to the
   // source screen, find the screen we should move onto and where.
@@ -371,6 +381,7 @@ private:
     std::string m_clipboardOwner;
     uint32_t m_clipboardSeqNum = 0;
   };
+
   // Order suggested by clang
 
   // the Primary Screen Client

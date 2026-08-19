@@ -19,9 +19,23 @@
 #include "gui/widgets/SettingsDialogButtonBox.h"
 
 #include <QFileDialog>
+#include <QGuiApplication>
 #include <QMessageBox>
+#include <QScreen>
 
 using enum ScreenConfig::SwitchCorner;
+
+namespace {
+
+QList<QRect> localDisplayGeometries()
+{
+  QList<QRect> displays;
+  for (const auto *display : QGuiApplication::screens())
+    displays.append(display->geometry());
+  return displays;
+}
+
+} // namespace
 
 ServerConfigDialog::ServerConfigDialog(QWidget *parent, ServerConfig &config)
     : QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
@@ -403,8 +417,6 @@ void ServerConfigDialog::loadFromConfig()
   for (const Hotkey &hotkey : std::as_const(serverConfig().hotkeys()))
     ui->listHotkeys->addItem(hotkey.text());
 
-  ui->screenSetupView->setModel(&m_screenSetupModel);
-
   auto &screens = serverConfig().screens();
   auto server = std::ranges::find_if(screens, [this](const Screen &screen) {
     return (screen.name() == serverConfig().getServerName());
@@ -413,10 +425,17 @@ void ServerConfigDialog::loadFromConfig()
   if (server == screens.end()) {
     Screen serverScreen(serverConfig().getServerName());
     serverScreen.markAsServer();
+    serverScreen.setDisplayGeometries(localDisplayGeometries());
     model().screen(m_columns / 2, m_rows / 2) = serverScreen;
   } else {
     server->markAsServer();
+    // The local desktop can change after the server entry was first saved.
+    // Refresh only this computer; other computers retain their configured layouts.
+    const auto displays = localDisplayGeometries();
+    if (!displays.isEmpty())
+      server->setDisplayGeometries(displays);
   }
+  ui->screenSetupView->setModel(&m_screenSetupModel);
   updateControls();
 }
 

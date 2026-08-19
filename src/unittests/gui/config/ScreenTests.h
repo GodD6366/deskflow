@@ -13,6 +13,8 @@ private Q_SLOTS:
   // Test are run in order top to bottom
   void initTestCase();
   void basicFunctionality();
+  void displayGeometryPersistence();
+  void displayLayoutPreviewRenders();
 
 private:
   inline static const QString m_settingsPath = QStringLiteral("tmp/test");

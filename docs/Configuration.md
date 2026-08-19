@@ -294,6 +294,7 @@ Comments are introduced by ''#'' and continue to the end of the line. ''name'' m
 
 * ''screens''
 * ''links''
+* ''displays''
 * ''options''
 
 The file is parsed top to bottom and names cannot be used before they've been defined in the `screens` or as an alias in the general config. So the `links` must appear after the `screens`.
@@ -364,6 +365,24 @@ end
 This indicates that computer ''larry'' is to the right of computer ''moe'' (so moving the cursor off the right edge of ''moe'' would make it appear at the left edge of ''larry''), the left half of curly is above the right half of ''moe'', ''moe'' is to the left of ''larry'' (edges are not necessarily symmetric so you have to provide both directions), the right half of curly is above the left half of ''larry'', all of ''moe'' is below the left half of ''curly'', and the left half of ''larry'' is below the right half of ''curly''.
 
 Note that links do not have to be symmetrical; for instance, here the edge between ''moe'' and ''curly'' maps to different ranges depending on if you're going up or down. In fact links don't have to be bidirectional. You can configure the right of ''moe'' to go to ''larry'' without a link from the left of ''larry'' to ''moe''. It's possible to configure a computer with no outgoing links; the cursor will get stuck on that computer unless you have a hot key configured to switch off of that computer.
+
+### displays section
+
+The optional `displays` section describes the physical monitors that make up each computer's virtual desktop. `position` places the computer in the shared layout. Each `display` value is `x,y,width,height` in the computer's local desktop coordinates. Multiple display lines can be used, and negative offsets are allowed. When this section is omitted, Deskflow treats the computer as one rectangular display for compatibility with older configurations.
+
+```
+section: displays
+	moe:
+		position = 0,0
+		display = 0,0,1920,1080
+		display = 1920,-360,2560,1440
+	larry:
+		position = 4480,120
+		display = 0,0,3840,2160
+end
+```
+
+The GUI writes this section automatically from the free-form display layout. Physical display edges that touch in the shared layout become switchable link segments.
 
 ### options section
 

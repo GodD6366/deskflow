@@ -878,12 +878,71 @@ Inoltre, verifica di poter %1 il file di configurazione del server: %2</translat
         <source>Alt &amp;Gr</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>X</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Y</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Width</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Height</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Detect local displays</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid display geometry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display width and height must be positive whole numbers.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ScreenSetupModel</name>
     <message>
         <source>&lt;center&gt;Screen: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;Double click to edit settings&lt;br&gt;Drag screen to the trashcan to remove it</source>
         <translation>&lt;center&gt;Schermo: &lt;b&gt;%1&lt;/b&gt;&lt;/center&gt;&lt;br&gt;Fai doppio clic per modificare le impostazioni&lt;br&gt;Trascina lo schermo nel cestino per rimuoverlo</translation>
+    </message>
+</context>
+<context>
+    <name>ScreenSetupView</name>
+    <message>
+        <source>%1 - %2 display(s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Edit computer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove computer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -917,15 +976,15 @@ Inoltre, verifica di poter %1 il file di configurazione del server: %2</translat
     </message>
     <message>
         <source>Drag a computer from the grid to the trashcan to remove it.</source>
-        <translation>Trascina un computer dalla griglia nel cestino per rimuoverlo.</translation>
+        <translation type="vanished">Trascina un computer dalla griglia nel cestino per rimuoverlo.</translation>
     </message>
     <message>
         <source>Configure the layout of your computer displays by dragging to where you want.</source>
-        <translation>Configura il layout degli schermi dei tuoi computer trascinandoli dove desideri.</translation>
+        <translation type="vanished">Configura il layout degli schermi dei tuoi computer trascinandoli dove desideri.</translation>
     </message>
     <message>
         <source>Drag to the grid to add a new computer.</source>
-        <translation>Trascina nella griglia per aggiungere un nuovo computer.</translation>
+        <translation type="vanished">Trascina nella griglia per aggiungere un nuovo computer.</translation>
     </message>
     <message>
         <source>Hotkeys</source>
@@ -1059,6 +1118,18 @@ L&apos;abilitazione di questa impostazione disabiliterà l&apos;interfaccia graf
     <message>
         <source>Enable lock to computer at startup</source>
         <translation type="unfinished">Abilita il blocco al computer all&apos;avvio</translation>
+    </message>
+    <message>
+        <source>Drag a computer here to remove it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display layout</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag to the layout to add a new computer.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
